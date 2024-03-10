@@ -22,7 +22,8 @@ You should see the json response, the server is up
 #### API USAGE
 
 Endpoint: /keyword
-Reqest
+
+Request
 ```json
 {
   "keyword": "TATAPOWER"
