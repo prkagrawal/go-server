@@ -100,16 +100,3 @@ func main() {
 	log.Println("Server is running on port 8080")
 	http.ListenAndServe(":8080", nil)
 }
-
-
-// Run the server
-// go run main.go
-// Open a browser and navigate to http://localhost:8080
-// You should see the json response
-
-// To test the server with concurrent requests
-// Use Apache Benchmark (ab) tool
-// ab -n 1000 -c 100 http://localhost:8080
-// This will send 1000 requests with 100 concurrent requests
-// You should see the server handling the requests concurrently
-// and returning the json response
