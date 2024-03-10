@@ -1,13 +1,11 @@
 package main
 
-// simple http server to handle concurrent requests, and return a json response
-
 import (
 	"encoding/json"
-	"fmt"
+	// "fmt"
+	"bytes"
 	"log"
 	"net/http"
-	// "time"
 )
 
 type Response struct {
@@ -41,7 +39,7 @@ func healthCheck(w http.ResponseWriter, r *http.Request) {
 
 func handleKeywordResponse(w http.ResponseWriter, r *http.Request) {
 	// fmt.Println("Handling request")
-	
+
 	// parse the request body and store it in a map
 	var request map[string]interface{}
 	err := json.NewDecoder(r.Body).Decode(&request)
@@ -63,20 +61,24 @@ func handleKeywordResponse(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// make ap api call to localhost:8081/keyword with POST request
-	// and send the keyword var in the request body
-	// and get the response
+	// make an POST req to localhost:8081/keyword
+	// and send the keyword in the request body
+	url := "http://localhost:8081/keyword"
 
-	response, err := http.Post("http://localhost:8081/keyword", "application/json", {"keyword": keyword})
-	
+	// JSON body
+	body := []byte(`{
+		"keyword": "` + keyword + `"
+	}`)
+
+	// make the POST request
+	response, err := http.NewRequest("POST", url, bytes.NewBuffer(body))
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
 	// parse the response body and store it in a json object
-	var res map[string]interface{}
-	err = json.NewDecoder(response.Body).Decode(&res)
+	res, err := json.Marshal(response)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
