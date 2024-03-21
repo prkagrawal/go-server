@@ -1,0 +1,24 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: my-golang-app1
+  namespace: default
+  labels:
+    app: my-golang-app1
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: my-golang-app1
+  template:
+    metadata:
+      labels:
+        app: my-golang-app1
+    spec:
+      containers:
+        - name: my-golang-app1
+          image: prkagrawal/my-golang-app1
+          # imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 80
+              name: http
