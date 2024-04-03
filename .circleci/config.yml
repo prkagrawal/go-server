@@ -1,4 +1,14 @@
 version: 2.1
+
+env:
+  PROJECT_ID: ${{ secrets.GKE_PROJECT }}
+  GKE_CLUSTER: gogo    # cluster name
+  GKE_ZONE: us-central1   # cluster zone
+  IMAGE: my-golang-app1 # image name
+  IMAGE_TAG: latest # image tag
+  GAR_ZONE: us-central1 # artifact registry zone
+  GAR_REPO: gogo-bk # artifact registry repository
+
 jobs:
   build:
     docker:
@@ -7,48 +17,79 @@ jobs:
       IMAGE_NAME: prkagrawal/my-golang-app1
     working_directory: ~/app
     steps:
-      - checkout
-      - setup_remote_docker
-      - run:
-          name: Build Docker image
-          command: |
-            docker build -t $IMAGE_NAME:latest .
-      - run:
-          name: Push Docker Image
-          command: |
-            echo "$DOCKERHUB_PASS" | docker login -u "$DOCKERHUB_USERNAME" --password-stdin
-            docker tag $IMAGE_NAME:latest $IMAGE_NAME:$CIRCLE_SHA1
-            docker push $IMAGE_NAME:latest
-            docker push $IMAGE_NAME:$CIRCLE_SHA1
-  deploy:
-    docker:
-      - image: circleci/buildpack-deps:bullseye
-    working_directory: ~/app
-    steps:
-      - checkout
-      - run:
-          name: Install envsubst
-          command: |
-            sudo apt-get update && sudo apt-get -y install gettext-base
-      - run:
-          name: Install kubectl
-          command: |
-            curl -LO https://storage.googleapis.com/kubernetes-release/release/$(curl -s https://storage.googleapis.com/kubernetes-release/release/stable.txt)/bin/linux/amd64/kubectl
-            chmod u+x ./kubectl
-      - run:
-          name: Deploy Code
-          command: ./scripts/ci-deploy.sh
-workflows:
-  version: 2
-  build-deploy-master:
-    jobs:
-      - build:
-          filters:
-            branches:
-              only: master
-      - deploy:
-          requires:
-            - build
-          filters:
-            branches:
-              only: master
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      # Setup gcloud CLI
+      - id: 'auth'
+        uses: 'google-github-actions/auth@v0'
+        with:
+          credentials_json: '${{ secrets.GKE_SA_KEY }}'
+
+      # Configure Docker to use the gcloud command-line tool as a credential
+      # helper for authentication
+      - name: Docker configuration
+        run: |-
+          gcloud auth print-access-token | docker login -u oauth2accesstoken --password-stdin https://$GAR_ZONE-docker.pkg.dev
+
+      # Get the GKE credentials so we can deploy to the cluster
+      - name: Set up GKE credentials
+        uses: google-github-actions/get-gke-credentials@v0
+        with:
+          cluster_name: ${{ env.GKE_CLUSTER }}
+          location: ${{ env.GKE_ZONE }}
+
+      # Build the Docker image
+      - name: Build
+        run: |-
+          docker build \
+            --tag "$GAR_ZONE-docker.pkg.dev/$PROJECT_ID/$GAR_REPO/$IMAGE:$IMAGE_TAG" \
+            --build-arg GITHUB_SHA="$GITHUB_SHA" \
+            --build-arg GITHUB_REF="$GITHUB_REF" \
+        # command: |
+        #     echo "$DOCKERHUB_PASS" | docker login -u "$DOCKERHUB_USERNAME" --password-stdin
+        #     docker tag $IMAGE_NAME:latest $IMAGE_NAME:$CIRCLE_SHA1
+        #     docker push $IMAGE_NAME:latest
+        #     docker push $IMAGE_NAME:$CIRCLE_SHA1
+      # Push the Docker image to Google Container Registry
+    - name: Publish
+      run: |-
+        docker push "$GAR_ZONE-docker.pkg.dev/$PROJECT_ID/$GAR_REPO/$IMAGE:$IMAGE_TAG"
+
+    # Deploy the Docker image to the GKE cluster
+    - name: Deploy
+      run: |-
+        kubectl apply -f deploy.yml
+        kubectl get pods
+#   deploy:
+#     docker:
+#       - image: circleci/buildpack-deps:bullseye
+#     working_directory: ~/app
+#     steps:
+#       - checkout
+#       - run:
+#           name: Install envsubst
+#           command: |
+#             sudo apt-get update && sudo apt-get -y install gettext-base
+#       - run:
+#           name: Install kubectl
+#           command: |
+#             curl -LO https://storage.googleapis.com/kubernetes-release/release/$(curl -s https://storage.googleapis.com/kubernetes-release/release/stable.txt)/bin/linux/amd64/kubectl
+#             chmod u+x ./kubectl
+#       - run:
+#           name: Deploy Code
+#           command: ./scripts/ci-deploy.sh
+# workflows:
+#   version: 2
+#   build-deploy-master:
+#     jobs:
+#       - build:
+#           filters:
+#             branches:
+#               only: master
+#       - deploy:
+#           requires:
+#             - build
+#           filters:
+#             branches:
+#               only: master

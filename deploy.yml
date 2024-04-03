@@ -17,7 +17,7 @@ spec:
     spec:
       containers:
         - name: my-golang-app1
-          image: prkagrawal/my-golang-app1:$COMMIT_SHA1
+          image: gogo-bk/my-golang-app1:latest
           # imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 80
