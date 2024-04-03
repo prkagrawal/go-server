@@ -3,7 +3,7 @@
 COMMIT_SHA1=$1
 
 # Export it so it's available for envsubst
-# export COMMIT_SHA1=$COMMIT_SHA1
+export COMMIT_SHA1=$COMMIT_SHA1
 
 #  Since the only way for envsubst to work on files is using input/output redirection,
 #  it's not possible to do in-place substitution, so you will save the output to another file
