@@ -10,7 +10,7 @@ env:
   GKE_CLUSTER: gogo    # cluster name
   GKE_ZONE: us-central1   # cluster zone
   IMAGE: my-golang-app1 # image name
-  IMAGE_TAG: latest # image tag
+  IMAGE_TAG: ${{ github.sha }} # image tag
   GAR_ZONE: us-central1 # artifact registry zone
   GAR_REPO: gogo-bk # artifact registry repository
 
@@ -55,6 +55,14 @@ jobs:
     - name: Publish
       run: |-
         docker push "$GAR_ZONE-docker.pkg.dev/$PROJECT_ID/$GAR_REPO/$IMAGE:$IMAGE_TAG"
+
+    - name: Install envsubst
+      run: |-
+        sudo apt-get update && sudo apt-get -y install gettext-base
+
+    - name: Substitute variables in deploy.yml by running script
+      run: |-
+        ./scripts/update-deploy.sh ${{ env.IMAGE_TAG }}
 
     # Deploy the Docker image to the GKE cluster
     - name: Deploy
