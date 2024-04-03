@@ -14,7 +14,7 @@ type Response struct {
 
 func handler(w http.ResponseWriter, r *http.Request) {
 	// fmt.Println("Handling request")
-	response := Response{Message: "Hello, World!"}
+	response := Response{Message: "Hi, the api is live"}
 	jsonResponse, err := json.Marshal(response)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
