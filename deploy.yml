@@ -20,5 +20,12 @@ spec:
           image: us-central1-docker.pkg.dev/brave-attic-417321/gogo-bk/my-golang-app1:latest
           # imagePullPolicy: IfNotPresent
           ports:
-            - containerPort: 80
+            - containerPort: 8080
               name: http
+          readinessProbe:
+            httpGet:
+              port: 8080
+              path: /
+            initialDelaySeconds: 15
+            periodSeconds: 10
+            failureThreshold: 
