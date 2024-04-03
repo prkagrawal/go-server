@@ -1,0 +1,14 @@
+apiVersion: v1
+kind: Service
+metadata:  
+  name: my-nodeport-service
+spec:
+  selector:    
+    app: my-golang-app1
+  type: NodePort
+  ports:  
+  - name: http
+    port: 80
+    targetPort: 8080
+    nodePort: 30349
+    protocol: TCP
